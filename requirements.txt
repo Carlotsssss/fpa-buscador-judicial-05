@@ -1,5 +1,4 @@
-fpa-buscador-judicial-05/
-   ├── app.py
-   ├── requirements.txt
-   ├── despacho.py
-   └── README.md
+streamlit
+pdfplumber
+pandas
+openpyxl
