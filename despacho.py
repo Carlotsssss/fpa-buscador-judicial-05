@@ -139,10 +139,10 @@ def flexible_search(clean_text, pattern):
         return match.group(0)
     return "No encontrado"
 
-# ---- subir PDF ----
+# ---- subir PDF + búsqueda ----
 uploaded_pdf = st.file_uploader("Sube el archivo PDF", type=["pdf"])
 
-if uploaded_pdf:
+if uploaded_pdf is not None:
     with pdfplumber.open(uploaded_pdf) as pdf:
         full_text = ""
         for page in pdf.pages:
@@ -199,4 +199,3 @@ if uploaded_pdf:
         st.success("Búsqueda finalizada ✔️")
 else:
     st.info("Por favor sube un archivo PDF para comenzar.")
-
