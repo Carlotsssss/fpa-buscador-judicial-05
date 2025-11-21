@@ -3,47 +3,100 @@ import pdfplumber
 import re
 import pandas as pd
 from io import BytesIO
+import os
+import json
 
 # ==============================
 # ⚙️ CONFIG GENERAL
 # ==============================
 st.set_page_config(page_title="Buscador Judicial FPA", layout="centered")
 
+USERS_FILE = "users.json"
+
 # ==============================
-# 🔐 CONFIGURACIÓN DE LOGIN
+# 🔐 MANEJO DE USUARIOS (ARCHIVO)
 # ==============================
 
-# Diccionario de usuarios válidos: {"usuario": "contraseña"}
-VALID_USERS = {
-    "fpa_admin": "panamera2025",
-    "carlota": "chapity298"
-    # agrega los que quieras:
-    # "otro_usuario": "otra_contraseña"
-}
+def load_users():
+    """Carga usuarios desde users.json; si no existe, crea uno con admin por defecto."""
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    # archivo no existe: sin usuarios o podrías crear uno por default
+    return {}
+
+def save_users(users):
+    """Guarda usuarios en users.json."""
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
 
 def check_credentials(username, password):
     """Verifica si el usuario y contraseña son válidos."""
-    return username in VALID_USERS and VALID_USERS[username] == password
+    users = load_users()
+    return username in users and users[username] == password
+
+# ==============================
+# 🧾 PANTALLAS DE LOGIN / REGISTRO
+# ==============================
 
 def login_screen():
-    """Muestra la pantalla de login."""
     st.title("🔐 Acceso al Buscador Judicial FPA")
 
-    with st.form("login_form"):
-        username = st.text_input("Usuario")
-        password = st.text_input("Contraseña", type="password")
-        submitted = st.form_submit_button("Entrar")
+    tab_login, tab_register = st.tabs(["Iniciar sesión", "Registrarse"])
 
-        if submitted:
-            if check_credentials(username, password):
-                st.session_state["authenticated"] = True
-                st.session_state["username"] = username
-                st.success(f"Bienvenido, {username} ✨")
-                st.experimental_rerun()
-            else:
-                st.error("Usuario o contraseña incorrectos.")
+    # --- TAB LOGIN ---
+    with tab_login:
+        with st.form("login_form"):
+            username = st.text_input("Usuario")
+            password = st.text_input("Contraseña", type="password")
+            submitted = st.form_submit_button("Entrar")
 
-# Inicializar estado de sesión
+            if submitted:
+                if check_credentials(username, password):
+                    st.session_state["authenticated"] = True
+                    st.session_state["username"] = username
+                    st.success(f"Bienvenido, {username} ✨")
+                    st.experimental_rerun()
+                else:
+                    st.error("Usuario o contraseña incorrectos.")
+
+    # --- TAB REGISTRO ---
+    with tab_register:
+        st.write("Crea tu usuario para usar el buscador.")
+        with st.form("register_form"):
+            new_username = st.text_input("Nuevo usuario")
+            new_password = st.text_input("Contraseña", type="password")
+            confirm_password = st.text_input("Confirmar contraseña", type="password")
+            submitted_reg = st.form_submit_button("Registrarme")
+
+            if submitted_reg:
+                users = load_users()
+
+                if not new_username.strip():
+                    st.error("El usuario no puede estar vacío.")
+                elif new_username in users:
+                    st.error("Ese usuario ya existe. Intenta con otro.")
+                elif len(new_password) < 4:
+                    st.error("La contraseña debe tener al menos 4 caracteres.")
+                elif new_password != confirm_password:
+                    st.error("Las contraseñas no coinciden.")
+                else:
+                    # Registrar nuevo usuario
+                    users[new_username] = new_password
+                    save_users(users)
+                    st.success("Usuario registrado correctamente. Ya puedes iniciar sesión. ✅")
+
+                    # (Opcional) logear directo después de registro:
+                    st.session_state["authenticated"] = True
+                    st.session_state["username"] = new_username
+                    st.experimental_rerun()
+
+# ==============================
+# 🧠 ESTADO DE SESIÓN
+# ==============================
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
@@ -59,7 +112,7 @@ if st.session_state["authenticated"]:
             st.session_state["username"] = ""
             st.experimental_rerun()
 
-# Si NO está autenticado, mostrar login y parar
+# Si NO está autenticado, mostrar login/registro y parar
 if not st.session_state["authenticated"]:
     login_screen()
     st.stop()
