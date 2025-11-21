@@ -14,40 +14,37 @@ st.set_page_config(page_title="Buscador Judicial FPA", layout="centered")
 USERS_FILE = "users.json"
 
 # ==============================
-# 🔐 MANEJO DE USUARIOS (ARCHIVO)
+# 🔐 MANEJO DE USUARIOS
 # ==============================
-
 def load_users():
-    """Carga usuarios desde users.json; si no existe, crea uno con admin por defecto."""
     if os.path.exists(USERS_FILE):
         try:
             with open(USERS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
         except Exception:
-            return {}
-    # archivo no existe: sin usuarios o podrías crear uno por default
+            pass
+    # si no existe o está corrupto, regresamos dict vacío
     return {}
 
 def save_users(users):
-    """Guarda usuarios en users.json."""
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
 
 def check_credentials(username, password):
-    """Verifica si el usuario y contraseña son válidos."""
     users = load_users()
     return username in users and users[username] == password
 
 # ==============================
-# 🧾 PANTALLAS DE LOGIN / REGISTRO
+# 🧾 LOGIN / REGISTRO
 # ==============================
-
 def login_screen():
     st.title("🔐 Acceso al Buscador Judicial FPA")
 
     tab_login, tab_register = st.tabs(["Iniciar sesión", "Registrarse"])
 
-    # --- TAB LOGIN ---
+    # --- LOGIN ---
     with tab_login:
         with st.form("login_form"):
             username = st.text_input("Usuario")
@@ -63,7 +60,7 @@ def login_screen():
                 else:
                     st.error("Usuario o contraseña incorrectos.")
 
-    # --- TAB REGISTRO ---
+    # --- REGISTRO ---
     with tab_register:
         st.write("Crea tu usuario para usar el buscador.")
         with st.form("register_form"):
@@ -84,12 +81,9 @@ def login_screen():
                 elif new_password != confirm_password:
                     st.error("Las contraseñas no coinciden.")
                 else:
-                    # Registrar nuevo usuario
                     users[new_username] = new_password
                     save_users(users)
                     st.success("Usuario registrado correctamente. Ya puedes iniciar sesión. ✅")
-
-                    # (Opcional) logear directo después de registro:
                     st.session_state["authenticated"] = True
                     st.session_state["username"] = new_username
                     st.experimental_rerun()
@@ -101,7 +95,7 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 # ==============================
-# 🔓 LOGOUT (BOTÓN EN SIDEBAR)
+# 🔓 LOGOUT EN SIDEBAR
 # ==============================
 if st.session_state["authenticated"]:
     with st.sidebar:
@@ -112,22 +106,19 @@ if st.session_state["authenticated"]:
             st.session_state["username"] = ""
             st.experimental_rerun()
 
-# Si NO está autenticado, mostrar login/registro y parar
+# Si NO está autenticado, mostramos login/registro y paramos
 if not st.session_state["authenticated"]:
     login_screen()
     st.stop()
 
 # ==============================
-# 🚀 APP PRINCIPAL (DESPUÉS DEL LOGIN)
+# 🚀 APP PRINCIPAL
 # ==============================
-
 st.title("🔍 Buscador Judicial – FPA Solutions")
 st.caption(f"Usuario conectado: **{st.session_state.get('username', '')}**")
 st.write("Sube un PDF y busca datos dentro del boletín judicial.")
 
-# ---------------------------------------------------------
-# Función de búsqueda flexible
-# ---------------------------------------------------------
+# ---- utilidades de búsqueda ----
 def normalize(text):
     if not text:
         return None
@@ -146,9 +137,7 @@ def flexible_search(clean_text, pattern):
         return match.group(0)
     return "No encontrado"
 
-# ---------------------------------------------------------
-# Cargar PDF
-# ---------------------------------------------------------
+# ---- subir PDF ----
 uploaded_pdf = st.file_uploader("Sube el archivo PDF", type=["pdf"])
 
 if uploaded_pdf:
@@ -191,7 +180,7 @@ if uploaded_pdf:
 
         st.write(results)
 
-        # Convertir resultados a Excel
+        # Pasar a Excel
         df = pd.DataFrame(results.items(), columns=["Campo", "Valor"])
 
         output = BytesIO()
