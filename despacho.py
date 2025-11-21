@@ -17,6 +17,7 @@ USERS_FILE = "users.json"
 # 🔐 MANEJO DE USUARIOS
 # ==============================
 def load_users():
+    """Carga usuarios desde users.json; si no existe o está roto, regresa dict vacío."""
     if os.path.exists(USERS_FILE):
         try:
             with open(USERS_FILE, "r", encoding="utf-8") as f:
@@ -25,14 +26,15 @@ def load_users():
                     return data
         except Exception:
             pass
-    # si no existe o está corrupto, regresamos dict vacío
     return {}
 
 def save_users(users):
+    """Guarda usuarios en users.json."""
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
 
 def check_credentials(username, password):
+    """Verifica si el usuario y contraseña son válidos."""
     users = load_users()
     return username in users and users[username] == password
 
@@ -57,7 +59,6 @@ def login_screen():
                     st.session_state["username"] = username
                     st.success(f"Bienvenido, {username} ✨")
                     st.rerun()
-
                 else:
                     st.error("Usuario o contraseña incorrectos.")
 
@@ -87,7 +88,7 @@ def login_screen():
                     st.success("Usuario registrado correctamente. Ya puedes iniciar sesión. ✅")
                     st.session_state["authenticated"] = True
                     st.session_state["username"] = new_username
-                    sst.rerun()
+                    st.rerun()
 
 # ==============================
 # 🧠 ESTADO DE SESIÓN
@@ -106,7 +107,6 @@ if st.session_state["authenticated"]:
             st.session_state["authenticated"] = False
             st.session_state["username"] = ""
             st.rerun()
-
 
 # Si NO está autenticado, mostramos login/registro y paramos
 if not st.session_state["authenticated"]:
@@ -199,3 +199,4 @@ if uploaded_pdf:
         st.success("Búsqueda finalizada ✔️")
 else:
     st.info("Por favor sube un archivo PDF para comenzar.")
+
