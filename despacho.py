@@ -56,7 +56,8 @@ def login_screen():
                     st.session_state["authenticated"] = True
                     st.session_state["username"] = username
                     st.success(f"Bienvenido, {username} ✨")
-                    st.experimental_rerun()
+                    st.rerun()
+
                 else:
                     st.error("Usuario o contraseña incorrectos.")
 
@@ -86,7 +87,7 @@ def login_screen():
                     st.success("Usuario registrado correctamente. Ya puedes iniciar sesión. ✅")
                     st.session_state["authenticated"] = True
                     st.session_state["username"] = new_username
-                    st.experimental_rerun()
+                    sst.rerun()
 
 # ==============================
 # 🧠 ESTADO DE SESIÓN
@@ -104,7 +105,8 @@ if st.session_state["authenticated"]:
         if st.button("Cerrar sesión"):
             st.session_state["authenticated"] = False
             st.session_state["username"] = ""
-            st.experimental_rerun()
+            st.rerun()
+
 
 # Si NO está autenticado, mostramos login/registro y paramos
 if not st.session_state["authenticated"]:
